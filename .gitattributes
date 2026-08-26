@@ -1,0 +1,9 @@
+*.c text eol=lf
+*.h text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+Kconfig text eol=lf
+Makefile text eol=lf
+Make.defs text eol=lf
+defconfig text eol=lf
