@@ -1,0 +1,7 @@
+############################################################################
+# Contest 2026 team 441 vision badge - Make.defs
+############################################################################
+
+ifneq ($(CONFIG_LVX_USE_DEMO_CONTEST2026_441_VISION_BADGE),)
+CONFIGURED_APPS += $(APPDIR)/packages/demos/contest2026_441_vision_badge
+endif

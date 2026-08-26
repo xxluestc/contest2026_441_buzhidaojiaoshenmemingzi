@@ -1,0 +1,34 @@
+config LVX_USE_DEMO_CONTEST2026_441_VISION_BADGE
+	bool "Contest 2026 team 441 vision assistance badge"
+	default n
+	---help---
+		Enable the ESP32-S3-EYE vision assistance badge application skeleton.
+		The initial version provides module contracts and diagnostics. Camera,
+		cloud vision, audio and vibration backends are completed milestone by
+		milestone and must not be treated as verified by enabling this option.
+
+if LVX_USE_DEMO_CONTEST2026_441_VISION_BADGE
+
+config CONTEST2026_441_VISION_BADGE_STACKSIZE
+	int "Vision badge main task stack size"
+	default 8192
+
+config CONTEST2026_441_VISION_BADGE_CAMERA_DEVPATH
+	string "V4L2 camera device path"
+	default "/dev/video0"
+
+config CONTEST2026_441_VISION_BADGE_AUDIO_DEVPATH
+	string "PCM capture device path"
+	default "/dev/audio/pcm0c"
+
+config CONTEST2026_441_VISION_BADGE_JPEG_BUFFER_SIZE
+	int "Maximum JPEG buffer size"
+	default 262144
+	range 65536 1048576
+
+config CONTEST2026_441_VISION_BADGE_RESULT_BUFFER_SIZE
+	int "Maximum structured result buffer size"
+	default 32768
+	range 4096 65536
+
+endif
