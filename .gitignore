@@ -1,0 +1,25 @@
+# openvela and local build outputs
+build/
+out/
+cmake_out/
+*.o
+*.a
+*.elf
+*.hex
+*.map
+
+# Local credentials and machine-specific settings
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Do not ignore logs/: exported AI Coding logs are contest deliverables.
