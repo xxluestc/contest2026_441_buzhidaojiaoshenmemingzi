@@ -1,36 +1,55 @@
-# contest2026_441_buzhidaojiaoshenmemingzi
+# 基于 openvela 的视障随行视觉辅助胸牌
 
-👋 欢迎参加 **2026 首届 openvela AI 硬件开发者大赛**！
+> 2026 首届 openvela AI 硬件开发者大赛 · 队伍 441 · AI 硬件产品创新赛道
 
-这是组委会为你的队伍创建的**专属参赛仓库**（本仓为样例/模板，队伍编号 `441`；你看到的将是你自己的 `contest2026_<编号>_<队伍名>`）。比赛期间，你的全部参赛代码、打包产物与 AI Coding 日志都提交到这里。
+面向具有独立出行能力的视障用户，项目拟用 **ESP32-S3-EYE** 制作免手持视觉辅助胸牌。在用户到达目标区域后，设备按需拍摄前方场景，通过 Wi-Fi 将单帧 JPEG 发送至 MiMo 多模态服务，识别入口、门牌、站点标识和公共服务设施，并以语音或振动反馈关键信息。
 
-> 本仓既是「代码仓」，又内置了一键拉取整套 openvela 工程的 `repo` 清单（manifest）。你只需跟它打交道，**自始至终只动一个文件夹**。
+当前仓库处于“方案冻结、应用骨架已建立、完整 openvela 构建与真机待验证”阶段。未完成的摄像头取帧、云端请求、语音和振动后端会明确返回 `-ENOSYS`，不会伪造硬件结果。
 
----
+## 一、为什么选择 ESP32-S3-EYE
 
-## 一、先读这些官方文档
+ESP32-S3-EYE 已有 openvela/NuttX BSP 和官方构建配置，并集成摄像头、数字麦克风、LCD、Wi-Fi 和外部 PSRAM。项目因此不宣称“新增 ESP32-S3-EYE 平台移植”，而把工作集中在：
 
-**通用（所有赛道必读）：**
+- V4L2 单帧采集与 JPEG 数据管理；
+- Wi-Fi/HTTPS 与 MiMo 多模态请求；
+- 板载麦克风采集和外接 I2S 音频输出；
+- GPIO/PWM 振动反馈；
+- Camera、JPEG、TLS、JSON、Audio 并行时的峰值内存与碎片控制。
 
-| 文档                                                                                                                                     | 用途                                           |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| [《大赛总览》](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/contest_overview.md)                        | 赛道、流程、评分、资源，建议先通读             |
-| [《参赛代码提交指南》](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/code_submission_guide.md)           | 仓库获取、提交流程、时间与权限（**以此为准**） |
-| [《AI Coding 日志归集与提交手册》](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_coding_log_guide.md) | 如何导出 AI 对话日志并提交到 `logs/`           |
+详细规划见 [docs/项目开发规划.md](docs/项目开发规划.md)。
 
-**按你的赛道选读（三选一）：**
+## 二、最小技术闭环
 
-| 赛道                  | 教程导航                                                                                                                                                 |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 快应用 / 手表应用创新 | [快应用教程导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/quickapp/quickapp_guide_index.md)                         |
-| AI 硬件产品创新       | [AI 硬件赛道教程导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_hardware/ai_hardware_guide_index.md)              |
-| 新硬件适配            | [新硬件适配赛道教程导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/hardware_porting/hardware_porting_guide_index.md) |
+```text
+用户触发
+  → ESP32-S3-EYE Camera
+  → /dev/video0（V4L2 单帧）
+  → JPEG
+  → Wi-Fi / HTTPS
+  → MiMo Vision
+  → 有界结构化结果
+  → 控制台 / 语音 / 振动反馈
+```
 
----
+第一阶段不持续上传视频，也不在端侧部署大型视觉模型。M1～M6 的可验收定义见 [docs/MVP验收标准.md](docs/MVP验收标准.md)。
 
-## 二、第一步：拉取完整工程
+## 三、目录结构
 
-用组委会提供的命令一键拉取「openvela 全量源码 + 你的专属仓」：
+```text
+├── app/vision_badge/       # 原生应用、服务接口和闭环状态机
+├── board/esp32s3-eye/      # 队伍专用 board config 与使用说明（非新 BSP）
+├── docs/                   # 规划、架构、资源预算、验收与测试场景
+├── logs/                   # 按大赛规范导出的 AI Coding 日志
+├── scripts/                # 环境检查、构建、烧录、串口监视
+└── contest2026_441_buzhidaojiaoshenmemingzi.xml
+                            # repo manifest 与 linkfile 映射
+```
+
+模板中的 `hello_app`、快应用和虚拟板级示例已移除，避免评委把无关样例误认为作品内容。
+
+## 四、拉取、构建与运行
+
+### 1. 拉取完整 openvela 工作区
 
 ```bash
 repo init -u https://github.com/open-vela/contest2026_441_buzhidaojiaoshenmemingzi \
@@ -38,111 +57,54 @@ repo init -u https://github.com/open-vela/contest2026_441_buzhidaojiaoshenmeming
 repo sync -c -j8
 ```
 
-同步后，你的整个仓库位于工作区的 `contest2026_441_buzhidaojiaoshenmemingzi/`，openvela 全量源码在外层（`nuttx/`、`apps/`、`packages/`、`vendor/` 等）。
+同步后，队伍仓位于工作区的 `contest2026_441_buzhidaojiaoshenmemingzi/`，`nuttx/`、`packages/`、`vendor/` 等公共仓位于其上一级。
 
----
-
-## 三、第二步：在哪里写代码
-
-**只在自己的仓目录 `contest2026_441_buzhidaojiaoshenmemingzi/` 里开发。** 不同作品形态放在对应子目录，manifest 会通过 `<linkfile>` 把它们**软链**到 openvela 编译树该在的位置——你不用手动 copy：
-
-| 作品形态 | 你的代码放这里             | 系统自动映射到                                 |
-| -------- | -------------------------- | ---------------------------------------------- |
-| 应用     | `app/hello_app/`           | `packages/demos/contest2026_441_hello_app`     |
-| 快应用   | `quickapp/hello_quickapp/` | `packages/apps/contest2026_441_hello_quickapp` |
-| 板级适配 | `board/contest_board/`     | `vendor/openvela/boards/contest2026_441_board` |
-
-> 用不到的形态目录可以删掉；新增作品时按同样规则加子目录，并在 `contest2026_441_buzhidaojiaoshenmemingzi.xml` 里补一条 `<linkfile>` 映射即可。**生产仓库（packages/nuttx/vendor 等）零改动。**
-
-建议仓库目录约定（便于评委定位）：
-
-```text
-app/ | quickapp/ | board/   # 你的作品代码
-logs/                       # AI Coding 日志（主动导出后提交，格式见 logs/README.md）
-README.md                   # 作品说明（提交前请改成你自己的，见第六节）
-```
-
-> 仓内附带了一个 `.gitignore.example`，给出了**编译产物**等不需要进仓的文件示例。如需启用，`cp .gitignore.example .gitignore` 后按需增删即可。**注意 `logs/` 下最终导出的 AI Coding 日志必须提交，不要忽略。**
->
-> `logs/` 的目录结构与提交格式见 [logs/README.md](logs/README.md)。
-
----
-
-## 四、第三步：编译与运行
-
-编译/运行步骤随作品形态不同而不同，请参考你所在赛道的教程导航：
-
-- 快应用 / 手表应用：[快应用教程导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/quickapp/quickapp_guide_index.md)（含模拟器与开发板部署）。
-- AI 硬件产品创新：[AI 硬件赛道教程导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_hardware/ai_hardware_guide_index.md)（环境搭建、编译烧录、Skill 开发）。
-- 新硬件适配：[新硬件适配赛道教程导航](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/hardware_porting/hardware_porting_guide_index.md)（BSP 移植、最小 NSH 基线）。
-
-子目录已通过 manifest 中的 `<linkfile>` 软链进 openvela 编译树，因此构建在 openvela 工作区**根目录**（即你这个仓的上一级）进行。openvela 使用 `build.sh` 作为统一入口，接收一个 **board config 路径**作为参数：
+### 2. 检查环境并构建
 
 ```bash
-# 进入 openvela 工作区根目录（你的仓的上一级）
-cd ..
-
-# 通用语法：第一个参数是 board config 路径，第二个参数可以是 menuconfig / distclean 等
-./build.sh <board-config-path> [menuconfig|distclean] [-j8]
+cd contest2026_441_buzhidaojiaoshenmemingzi
+bash scripts/check-env.sh
+bash scripts/build.sh -j8
 ```
 
-> 具体的 board config 路径、目标产物、模拟器/真机部署方式请以你所在赛道的教程导航为准。本仓 `app/` `quickapp/` `board/` 三个示例骨架对应的 Kconfig 选项可通过 `menuconfig` 启用。
+队伍 manifest 会做两项映射：
 
----
+- `app/vision_badge` → `packages/demos/contest2026_441_vision_badge`
+- 队伍专用 defconfig → `vendor/espressif/boards/esp32s3/esp32s3-eye/configs/contest2026_441_vision_badge`
 
-## 五、第四步：提交作品
+该 defconfig 基于大赛分支现有 ESP32-S3-EYE `openvela` 配置，并启用 `vision_badge`。预期固件产物为 `../nuttx/nuttx.bin`；当前仓尚未同步整套工作区，因此本次只完成源码级检查，完整固件构建仍待执行并留存日志。
 
-1. **fork** 你的专属仓 → 开发 → `git commit` 并推送 → 向专属仓发起 **Pull Request**，可**自行 review 并合入**（无需等组委会）。
-2. **AI Coding 日志**：与 AI 工具的对话会自动记录到本机 staging（不会自动上传），需你**主动导出/打包**选定会话到仓内 `logs/` 目录后一并提交。详见[《AI Coding 日志归集与提交手册》](https://github.com/open-vela/docs/blob/dev-ai-contest-2026/zh-cn/contest_2026/ai_coding_log_guide.md)。
-3. 若需改动 **nuttx 等公共仓库**，不在本仓改，而是 fork 对应公共仓、以 PR 提交到 `dev-ai-contest-2026` 分支，由组委会 review 后合入。
+### 3. 烧录与串口
 
-> ⏰ **提交作品截止：9 月 20 日**。截止后统一收回 push 权限，仍可查看 / clone。
->
-> 获奖后再按要求将作品 PR 至 openvela 上游对应仓库（走标准 PR + CI 流程）。
-
-### 关于 PR 与 CLA
-
-- 本仓所有改动通过 **Pull Request** 合入（分支保护强制，可自行合入自己的 PR）。
-- 首次贡献需在[**官网签署 CLA**](https://openvela.com/#/community/cla)；PR 上会自动跑 `cla/signature` 检查，在官网签署成功后，在 PR 评论 `/check-cla` 复检即可通过。
-
----
-
-## 六、提交前：把本 README 改成你的作品说明
-
-本文件目前是组委会给的**使用说明书**。**作品提交前，请把它替换成你自己作品的说明**，方便评委快速了解你做了什么、怎么跑起来。建议至少包含以下内容：
-
-```markdown
-# <你的作品名>
-
-## 一、作品简介
-<一句话/一段话说明这个作品是什么、解决什么问题、亮点在哪>
-
-## 二、选题方向
-<快应用 / 手表应用创新 ｜ AI 硬件产品创新 ｜ 新硬件适配 ｜ 自定方向，并简述理由>
-
-## 三、目录结构
-<列出你这个仓里各目录/文件的作用，例如：>
-- `app/xxx/`        — <说明>
-- `board/xxx/`      — <说明>
-- `quickapp/xxx/`   — <说明>
-- `logs/`           — AI Coding 日志
-- `docs/` 或其他    — <说明>
-
-## 四、运行方式
-<拉取工程后，如何编译、烧录/部署、运行的完整步骤；最好能让评委照着一步步复现>
-
-## 五、AI Coding 使用说明
-<说明本作品如何借助 AI 辅助开发：
-- 在需求拆解 / 方案设计 / 编码 / 调试 / 文档等环节如何与 AI 协作；
-- AI 对开发效率或质量带来的实际帮助。
-完整对话日志见 logs/ 目录>
+```bash
+bash scripts/flash.sh /dev/ttyACM0
+bash scripts/monitor.sh /dev/ttyACM0
 ```
 
-> 提示：将会根据「作品本身 + 你的 README 说明 + `logs/` 里的 AI Coding 日志」来理解和评估你的作品，README 写清楚很重要。
+进入 NSH 后可先运行：
 
----
+```text
+vision_badge status
+vision_badge selftest
+```
 
-## 附：仓库命名规范
+`status` 只报告真实设备节点探测结果。`run` 命令要到 M3/M5/M6 后端完成后才形成有效闭环。
 
-`contest2026_<编号>_<队伍名>` — 编号三位零填充；队名 slug（全小写、英文/拼音、连字符）。例：`contest2026_441_buzhidaojiaoshenmemingzi`。
-（仓库由组委会统一创建，**每队仅一个仓**，无需自行命名。）
+## 五、当前进度
+
+| 项目 | 状态 | 证据 |
+| --- | --- | --- |
+| 方案、功能边界与板卡选择 | 已冻结 | `docs/项目开发规划.md` |
+| 应用构建接入与模块接口 | 已完成骨架 | `app/vision_badge/` |
+| 队伍专用 ESP32-S3-EYE 配置 | 已建立 | `board/esp32s3-eye/` |
+| 完整 openvela 固件构建 | 待验证 | 后续构建日志 |
+| M1～M6 最小视觉闭环 | 待真机逐项验证 | `docs/MVP验收标准.md` |
+| M7～M10 完整语音交互 | 第二阶段 | `docs/MVP验收标准.md` |
+
+## 六、安全与 AI Coding 说明
+
+- Wi-Fi SSID/密码、MiMo API Key、证书私钥不得写入代码、defconfig、文档或日志；运行期凭据采用串口或受控配置注入。
+- 公共 `nuttx`、`packages`、`vendor` 的后续改动按比赛规则单独走上游 PR；队伍仓仅保存自身代码、配置、补丁和证据。
+- AI 用于需求拆解、方案核查、接口骨架、资源预算和文档生成。真实导出的会话日志按 [logs/README.md](logs/README.md) 归档，提交前人工检查敏感信息。
+
+仓库提交采用“本地变更 → 团队审核 → commit/push → Pull Request”的顺序；未经审核的内容不推送。
